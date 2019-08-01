@@ -1,6 +1,7 @@
 package io.ozguraslan.ppmtool.web;
 
 import io.ozguraslan.ppmtool.domain.Project;
+import io.ozguraslan.ppmtool.service.MapValidationErrorService;
 import io.ozguraslan.ppmtool.service.ProjectService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -23,17 +24,16 @@ public class ProjectController {
     @Autowired
     private ProjectService projectService;
 
+    @Autowired
+    private MapValidationErrorService mapValidationErrorService;
+
 
     @PostMapping("")
     public ResponseEntity<?> createNewProject(@Valid @RequestBody Project project, BindingResult result){//binding request ile bir tane result elde edersin
-        if(result.hasErrors()){//eger bu hata mesaji iceririse
 
-            Map<String,String> errorMap = new HashMap<>();
-
-            for(FieldError error : result.getFieldErrors()){//getfielderrors ile aldiklari her field erroru mapini icne atiyorsun
-                errorMap.put(error.getField(), error.getDefaultMessage());//error ve mesaji
-            }
-            return new ResponseEntity<Map<String ,String >>(errorMap, HttpStatus.BAD_REQUEST);//verecegin hhtp requesti responseenitiy ile yazdiriyorsun
+        ResponseEntity<?> errorMap = mapValidationErrorService.errorValidation(result);
+        if(errorMap!=null){
+            return errorMap;
         }
         projectService.saveOrUpdateProject(project);
         return new ResponseEntity<Project>(project, HttpStatus.CREATED);
